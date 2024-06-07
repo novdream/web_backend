@@ -33,7 +33,7 @@ def editUserInfo(request):
 
     # jwt 令牌解析失败
     if ordinary_user is None:
-        return JsonResponse(Result.failure(
+         return JsonResponse(Result.failure(
             code=Result.HTTP_STATUS_NOT_ACCEPTABLE,
             message='invalid jwt token',
         ))

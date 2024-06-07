@@ -1,5 +1,9 @@
 from django.core.mail import EmailMessage
+
+from django.core.mail import send_mail
+
 from django.http import JsonResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from utils.result import Result
@@ -88,16 +92,39 @@ def generateCaptcha(request):
     captcha_text = utils.generateCaptcha()
 
     # 将验证码和用户邮箱保存到Session中
-    request.session['captcha'] = captcha_text
-    request.session['user_email'] = user_email
+    # request.session['captcha'] = captcha_text
+    # request.session['user_email'] = user_email
+
+    # 将验证码和用户邮箱保存到数据库中
+    record = models.Captcha.objects.filter(
+        user_email=user_email
+    ).first()
+
+    if record is None:
+        record = models.Captcha.objects.create(
+            user_email=user_email
+        )
+
+    record.captcha = captcha_text
+    record.expire_time = timezone.now() + timezone.timedelta(minutes=30)
+
+    record.save()
+
 
     # 向目标邮箱发送验证码
-    EmailMessage(
+    # EmailMessage(
+    #     subject='音乐播放器验证',
+    #     body='欢迎您使用音乐播放器，您的验证码是{},请尽快进行验证'.format(captcha_text),
+    #     from_email='yulo25541733@163.com',
+    #     to=[user_email]
+    # ).send()
+
+    send_mail(
         subject='音乐播放器验证',
-        body='欢迎您使用音乐播放器，您的验证码是{},请尽快进行验证'.format(captcha_text),
+        message='欢迎您使用音乐播放器，您的验证码是{},请尽快进行验证'.format(captcha_text),
         from_email='yulo25541733@163.com',
-        to=[user_email]
-    ).send()
+        recipient_list=[user_email]
+    )
 
     return JsonResponse(Result.success())
 
@@ -112,28 +139,24 @@ def userRegister(request):
 
     username = request.POST.get('user_name')
     password = request.POST.get('user_password')
-    email = request.POST.get('user_email')
+    user_email = request.POST.get('user_email')
     captcha = request.POST.get('captcha')
 
     # 校验会话中是否存在验证码
-    if not ('captcha' in request.session) or not ('user_email' in request.session):
-        return JsonResponse(Result.failure(
-            code=Result.HTTP_STATUS_NOT_ACCEPTABLE,
-            message='Captcha is missing '
-        ))
-
-    # 获取验证码，删除会话中的邮箱和验证码字段
-    session_captcha = request.session['captcha']
-    session_user_email = request.session['user_email']
-    request.session.delete('captcha')
-    request.session.delete('user_email')
+    record = models.Captcha.objects.filter(
+        user_email=user_email,
+        captcha=captcha,
+        expire_time__gt=timezone.now()
+    ).first()
 
     # 校验会话的验证码是否与表单提交的验证码一致
-    if session_captcha != captcha or session_user_email != email:
+    if record is None:
         return JsonResponse(Result.failure(
             code=Result.HTTP_STATUS_NOT_ACCEPTABLE,
             message='Captcha check failed'
         ))
+
+    record.delete()
 
     # 校验密码
     if not utils.checkPassword(password):
@@ -143,7 +166,7 @@ def userRegister(request):
         ))
 
     # 校验邮箱是否唯一 这里不用校验邮箱是否合法，因为发送邮件时校验过了
-    if modelCheck.existEmailCheck(email_str=email):
+    if modelCheck.existEmailCheck(email_str=user_email):
         return JsonResponse(Result.failure(
             code=Result.HTTP_STATUS_CONFLICT,
             message='Email has been registered'
@@ -152,7 +175,7 @@ def userRegister(request):
     # 用户信息保存到数据库
     new_user = models.OrdinaryUser.objects.create(
         username=username,
-        email=email,
+        email=user_email,
         password=password,
     )
 

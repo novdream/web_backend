@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.utils import timezone
 
 # Create your models here.
 
@@ -154,7 +155,6 @@ class Song(models.Model):
 
 
 class SongAndProducer(models.Model):
-
     producer = models.ForeignKey('Producer', on_delete=models.CASCADE)
     song = models.ForeignKey('Song', on_delete=models.CASCADE)
 
@@ -267,7 +267,6 @@ class SongAndSongList(models.Model):
 
 
 class SongComment(models.Model):
-
     scid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     song = models.ForeignKey('Song', on_delete=models.CASCADE)
@@ -410,7 +409,6 @@ class Blog(models.Model):
 
 
 class BlogComment(models.Model):
-
     bcid = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
     blog = models.ForeignKey('Blog', on_delete=models.CASCADE)
@@ -419,4 +417,17 @@ class BlogComment(models.Model):
     likes = models.IntegerField(default=0)
     comment = models.CharField(max_length=400, default='')
     release_time = models.DateTimeField(auto_now=True)
+
+
+"""
+    登录验证码
+"""
+
+
+class Captcha(models.Model):
+    captchaId = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    user_email = models.EmailField(unique=True)
+    captcha = models.CharField(max_length=10)
+    expire_time = models.DateTimeField(default=timezone.now)  # 默认设置为当前时间
+
 

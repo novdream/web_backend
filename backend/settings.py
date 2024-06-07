@@ -104,8 +104,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'musicplayer',
         'USER': 'root',
-        'PASSWORD': 'root1234',
-        'HOST': '121.41.59.174',
+        'PASSWORD': '123lyl789',
+        'HOST': 'localhost',
         'PORT': 3306,
         'OPTIONS': {
             'charset': 'utf8mb4',
@@ -157,6 +157,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # 发送配置邮箱
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.163.com'
-EMAIL_PORT = 25
-EMAIL_USE_TLS = True
+EMAIL_PORT = 465
+# EMAIL_USE_TLS = True
+EMAIL_USE_TLS = False  # 如果使用TLS则设置为True
+EMAIL_USE_SSL = True  # 使用SSL
 EMAIL_HOST_USER = 'yulo25541733@163.com'
+EMAIL_HOST_PASSWORD = 'RGVYSGVJCQZAIWRU'
