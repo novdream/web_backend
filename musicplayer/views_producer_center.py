@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from utils.modelOperation import decodeJwtToken
 from utils.result import Result
 from utils import utils
-from musicplayer import models
+from musicplayer import models, models_sqlview
 from utils.oss2Utils import OSS2Utils
 
 
@@ -310,7 +310,7 @@ def uploadSongAudio(request):
 
 
 @csrf_exempt
-def upLoadSongLyrics(request):
+def uploadSongLyrics(request):
     if request.method != 'POST':
         return JsonResponse(Result.failure(
             code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,
@@ -681,6 +681,8 @@ def querySongOfProducer(request):
             'audio_url': song_iterator.audio_url,
             'lyrics_url': song_iterator.lyrics_url,
 
+            'play_back': song_iterator.play_back,
+
             'sname': song_iterator.sname,
             'stype': song_iterator.stype,
             'sversion': song_iterator.sversion,
@@ -856,6 +858,66 @@ def queryFansOfProducer(request):
 
 
 @csrf_exempt
+def queryCollaboratedProducer(request):
+
+    if request.method != 'GET':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,
+            message='Method {} not allowed, GET only'.format(request.method)
+        ))
+
+    encode_jwt = request.GET.get('encode_jwt')
+
+    # 没有 jwt 令牌字段
+    if encode_jwt is None or encode_jwt == '':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_UNAUTHORIZED,
+            message='no jwt token',
+        ))
+
+    ordinary_user = decodeJwtToken(encode_jwt)
+
+    # jwt 令牌解析失败
+    if ordinary_user is None:
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_NOT_ACCEPTABLE,
+            message='invalid jwt token',
+        ))
+
+    # 查看用户是否有创作者权限
+    producer = ordinary_user.producer
+
+    if producer is None:
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_UNAUTHORIZED,
+            message='producer authority required'
+        ))
+
+    my_song_list = models.Song.objects.filter(
+        producer=producer
+    ).all()
+
+    collaboration_producer_list = models.SongAndProducer.objects.filter(
+        song__in=my_song_list
+    ).values_list('producer_id', flat=True).all()
+
+    producerview_list = models_sqlview.ProducerView.objects.filter(
+        pid__in=collaboration_producer_list
+    ).all()
+
+    return JsonResponse(Result.success(
+        [
+            {
+                'pid': producerview_iterator.pid,
+                'username': producerview_iterator.username,
+                'profile_picture_url': producerview_iterator.profile_picture_url,
+            }
+            for producerview_iterator in producerview_list
+        ]
+    ))
+
+
+@csrf_exempt
 def createSongCollaboration(request):
     if request.method != 'POST':
         return JsonResponse(Result.failure(
@@ -920,8 +982,8 @@ def createSongCollaboration(request):
     joint_role = request.POST.get('role')
 
     if models.SongAndProducer.objects.filter(
-        song=dst_song,
-        producer=joint_producer,
+            song=dst_song,
+            producer=joint_producer,
     ).count() != 0:
         return JsonResponse(Result.failure(
             code=Result.HTTP_STATUS_CONFLICT,
@@ -935,7 +997,20 @@ def createSongCollaboration(request):
         status='p',
     )
 
-    # FUTURE TODO: 在此处通知联合投稿的创作者确认或拒绝联合投稿,把消息存入数据库中?
+    joint_producer_user = models.OrdinaryUser.objects.filter(
+        producer=joint_producer
+    ).first()
+
+    system_message = "创作者\'{}\'向您发出了联合投稿邀请，歌曲名\'{}\',请进行确认".format(
+        ordinary_user.username,
+        dst_song.sname
+    )
+
+    models.Message.objects.create(
+        receiver=joint_producer_user,
+        is_system_message=True,
+        message=system_message
+    )
 
     return JsonResponse(Result.success())
 
@@ -993,16 +1068,33 @@ def handleSongCollaboration(request):
 
     if confirm == 'y':
         dst_record.status = 'c'
+        system_message = "创作者\'{}\'确认了您发出了联合投稿邀请，歌曲名:\'{}\'".format(
+            ordinary_user.username,
+            dst_record.song.sname,
+        )
     else:
         dst_record.status = 'r'
+        system_message = "创作者\'{}\'拒绝了您发出了联合投稿邀请，歌曲名:\'{}\'".format(
+            ordinary_user.username,
+            dst_record.song.sname,
+        )
 
     dst_record.save()
+
+    origin_user = models.OrdinaryUser.objects.filter(
+        producer=dst_record.song.producer
+    ).first()
+
+    models.Message.objects.create(
+        receiver=origin_user,
+        is_system_message=True,
+        message=system_message
+    )
 
     return JsonResponse(Result.success())
 
 
 def querySongCollaboration(request):
-
     if request.method != 'GET':
         return JsonResponse(Result.failure(
             code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,
@@ -1082,5 +1174,41 @@ def querySongCollaboration(request):
     ))
 
 
+def getNumFollow(request):
+    if request.method != 'GET':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,
+            message='Method {} not allowed, GET only'.format(request.method)
+        ))
 
+    encode_jwt = request.GET.get('encode_jwt')
 
+    # 没有 jwt 令牌字段
+    if encode_jwt is None or encode_jwt == '':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_UNAUTHORIZED,
+            message='no jwt token',
+        ))
+
+    ordinary_user = decodeJwtToken(encode_jwt)
+
+    # jwt 令牌解析失败
+    if ordinary_user is None:
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_NOT_ACCEPTABLE,
+            message='invalid jwt token',
+        ))
+
+    # 查看用户是否有创作者权限
+    producer_id = ordinary_user.producer
+    if producer_id is None:
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_NOT_ACCEPTABLE,
+            message='user is not producer',
+        ))
+
+    num = models.UserFollowProducer.objects.filter(producer=producer_id).count()
+    return JsonResponse(Result.success({
+        'pid': producer_id,
+        'num': num,
+    }))

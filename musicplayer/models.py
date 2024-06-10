@@ -133,7 +133,7 @@ class Song(models.Model):
     metadata = models.CharField(max_length=200, null=True)
     introduction = models.CharField(max_length=200, null=True)
 
-    play_count = models.IntegerField(default=0)
+    play_back = models.IntegerField(default=0)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
 
@@ -431,3 +431,25 @@ class Captcha(models.Model):
     expire_time = models.DateTimeField(default=timezone.now)  # 默认设置为当前时间
 
 
+"""
+   消息中心
+"""
+
+
+class Message(models.Model):
+    sender = models.ForeignKey(
+        'OrdinaryUser',
+        on_delete=models.CASCADE,
+        related_name='sender',  # 自定义related_name为sender
+        null=True
+    )
+    receiver = models.ForeignKey(
+        'OrdinaryUser',
+        on_delete=models.CASCADE,
+        related_name='receiver'  # 自定义related_name为receiver
+    )
+
+    is_system_message = models.BooleanField(default=False)
+    has_read = models.BooleanField(default=False)
+    message = models.CharField(max_length=400, blank=True)  # 使用blank=True而不是default=''
+    send_time = models.DateTimeField(auto_now_add=True)

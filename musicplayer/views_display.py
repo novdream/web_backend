@@ -70,6 +70,7 @@ def querySongById(request):
 
             'album': {
                 'aid': song_info.album.aid,
+                'aname': song_info.album.aname,
                 'cover_url': song_info.album.cover_url
             },
 
@@ -726,3 +727,22 @@ def cancelFollowProducer(request):
 
     return JsonResponse(Result.success())
 
+
+# 播放量+1
+@csrf_exempt
+def addPlayBack(request):
+    if request.method != 'POST':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,
+            message='Method {} not allowed, POST only'.format(request.method)
+        ))
+    sid = request.POST.get('song_sid')
+    song = models.Song.objects.filter(sid=sid).first()
+    if song is None:
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_NOT_ACCEPTABLE,
+            message='songId is not found'
+        ))
+    song.play_back += 1
+    song.save()
+    return JsonResponse(Result.success())

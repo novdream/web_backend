@@ -110,7 +110,6 @@ def generateCaptcha(request):
 
     record.save()
 
-
     # 向目标邮箱发送验证码
     # EmailMessage(
     #     subject='音乐播放器验证',
@@ -265,3 +264,61 @@ def userModifyPassword(request):
     ordinary_user.save()
 
     return JsonResponse(Result.success())
+
+
+def checkJwtToken(request):
+    if request.method != 'GET':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,
+            message='Method {} not allowed, GET only'.format(request.method)
+        ))
+
+    encode_jwt = request.GET.get('encode_jwt')
+
+    # 没有 jwt 令牌字段
+    if encode_jwt is None or encode_jwt == '':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_UNAUTHORIZED,
+            message='no jwt token',
+        ))
+
+    ordinary_user = modelOperation.decodeJwtToken(encode_jwt)
+
+    # jwt 令牌解析失败
+    if ordinary_user is None:
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_NOT_ACCEPTABLE,
+            message='invalid jwt token',
+        ))
+
+    return JsonResponse(Result.success())
+
+
+def updateJwtToken(request):
+    if request.method != 'GET':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,
+            message='Method {} not allowed, GET only'.format(request.method)
+        ))
+
+    encode_jwt = request.GET.get('encode_jwt')
+
+    # 没有 jwt 令牌字段
+    if encode_jwt is None or encode_jwt == '':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_UNAUTHORIZED,
+            message='no jwt token',
+        ))
+
+    ordinary_user = modelOperation.decodeJwtToken(encode_jwt)
+
+    # jwt 令牌解析失败
+    if ordinary_user is None:
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_NOT_ACCEPTABLE,
+            message='invalid jwt token',
+        ))
+
+    new_jwt_token = modelOperation.generateJwtToken(ordinary_user, 2)
+
+    return JsonResponse(Result.success(new_jwt_token))

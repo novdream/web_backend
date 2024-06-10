@@ -22,7 +22,7 @@ from musicplayer import views_producer_center as views_pc
 from musicplayer import views_user_center as views_uc
 from musicplayer import views_display as views_dp
 from musicplayer import views_community as views_cc
-
+from musicplayer import views_message as views_ms
 urlpatterns = [
     path('admin/', admin.site.urls),
     # path('email/', views_mp.testEmail),
@@ -34,6 +34,9 @@ urlpatterns = [
     path('api/userRegister/', views_mp.userRegister),
     path('api/userLogin/', views_mp.userLogin),
     path('api/userModifyPassword/', views_mp.userModifyPassword),
+
+    path('api/checkJwtToken/', views_mp.checkJwtToken),
+    path('api/updateJwtToken/', views_mp.updateJwtToken),
 
     # display 信息展示
     path('api/queryProducerById/', views_dp.queryProducerById),
@@ -55,6 +58,9 @@ urlpatterns = [
     path('api/followProducer/', views_dp.followProducer),
     path('api/cancelFollowProducer/', views_dp.cancelFollowProducer),
 
+    # 发送sid播放量+1
+    path('api/addPlayBack/', views_dp.addPlayBack),
+
 
     # userCenter 用户中心
     path('api/editUserInfo/', views_uc.editUserInfo),
@@ -66,7 +72,7 @@ urlpatterns = [
     path('api/createSong/', views_pc.createSong),
     path('api/modifySong/', views_pc.modifySong),
     path('api/uploadSongAudio/', views_pc.uploadSongAudio),
-    path('api/uplondSongLyrics/', views_pc.upLoadSongLyrics),
+    path('api/uploadSongLyrics/', views_pc.uploadSongLyrics),
 
     path('api/createAlbum/', views_pc.createAlbum),
     path('api/modifyAlbum/', views_pc.modifyAlbum),
@@ -77,9 +83,13 @@ urlpatterns = [
     path('api/queryProducer/', views_pc.queryProducer),
 
     path('api/queryFansOfProducer/', views_pc.queryFansOfProducer),
+    path('api/queryCollaboratedProducer/', views_pc.queryCollaboratedProducer),
     path('api/createSongCollaboration/', views_pc.createSongCollaboration),
     path('api/handleSongCollaboration/', views_pc.handleSongCollaboration),
     path('api/querySongCollaboration/', views_pc.querySongCollaboration),
+
+    # 获取关注歌手人数
+    path('api/getNumFollow/', views_pc.getNumFollow),
 
     # communityCenter 社群中心
     path('api/createCommunity/', views_cc.createCommunity),
@@ -102,4 +112,9 @@ urlpatterns = [
     path('api/getUserAllBriefBlog/', views_cc.getUserAllBriefBlog),
     path('api/getUserAllBlog/', views_cc.getUserAllBlog),
 
+    # message
+    # 发送消息
+    path('api/sendMessage/', views_ms.sendMessage),
+    path('api/getUserMessage/', views_ms.getUserMessage),
+    path('api/getSystemMessage/', views_ms.getSystemMessage),
 ]
