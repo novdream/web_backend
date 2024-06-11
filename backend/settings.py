@@ -104,8 +104,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'musicplayer',
         'USER': 'root',
-        'PASSWORD': '123lyl789',
-        'HOST': 'localhost',
+        'PASSWORD': 'root1234',
+        'HOST': '172.17.0.3',
         'PORT': 3306,
         'OPTIONS': {
             'charset': 'utf8mb4',

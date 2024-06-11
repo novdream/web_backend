@@ -291,6 +291,7 @@ def querySongList(request):
                 {
                     'sid': song_iterator.sid,
                     'sname': song_iterator.sname,
+                    'play_back': song_iterator.play_back,
 
                     'album_aid': song_iterator.aid,
                     'album_aname': song_iterator.aname,
@@ -371,7 +372,7 @@ def addSongToSongList(request):
 
 
 @csrf_exempt
-def dropSongToSongList(request):
+def dropSongFromSongList(request):
     if request.method != 'POST':
         return JsonResponse(Result.failure(
             code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,
@@ -433,6 +434,120 @@ def dropSongToSongList(request):
     ).delete()
 
     return JsonResponse(Result.success())
+
+
+def querySongByAlbum(request):
+
+    if request.method != 'GET':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,
+            message='Method {} not allowed, GET only'.format(request.method)
+        ))
+
+    album_aid = request.GET.get('album_aid')
+
+    dst_album = models.Album.objects.filter(
+        aid=album_aid
+    ).first()
+
+    if dst_album is None:
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_NOT_FOUND,
+            message='album not found'
+        ))
+
+    dst_songview_list = models_sqlview.SongView.objects.filter(
+        aid=dst_album.aid
+    ).all()
+
+    return JsonResponse(Result.success(
+        [
+            {
+                'sid': song_iterator.sid,
+                'sname': song_iterator.sname,
+                'play_back': song_iterator.play_back,
+
+                'album_aid': song_iterator.aid,
+                'album_aname': song_iterator.aname,
+                'album_cover_url': song_iterator.cover_url,
+
+                'producer_pid': song_iterator.pid,
+                'producer_username': song_iterator.username,
+            }
+            for song_iterator in dst_songview_list
+        ],
+    ))
+
+
+def querySongByProducer(request):
+
+    if request.method != 'GET':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,
+            message='Method {} not allowed, GET only'.format(request.method)
+        ))
+
+    producer_pid = request.GET.get('producer_pid')
+
+    dst_producer = models.Producer.objects.filter(
+        pid=producer_pid
+    ).first()
+
+    if dst_producer is None:
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_NOT_FOUND,
+            message='producer not found'
+        ))
+
+    # 由该创作者投稿的歌曲
+    directupload_songview_list = models_sqlview.SongView.objects.filter(
+        pid=dst_producer.pid
+    ).all()
+
+    # 该创作者与其他创作者联合投稿的歌曲
+    collaborate_songsid_list = models.SongAndProducer.objects.filter(
+        producer=dst_producer,
+        status='c',
+    ).values_list('song_id', flat=True).all()
+
+    collaborate_songview_list = models_sqlview.SongView.objects.filter(
+        sid__in=collaborate_songsid_list
+    ).all()
+
+    return JsonResponse(Result.success(
+        {
+            "producer_upload": [
+                {
+                    'sid': song_iterator.sid,
+                    'sname': song_iterator.sname,
+                    'play_back': song_iterator.play_back,
+
+                    'album_aid': song_iterator.aid,
+                    'album_aname': song_iterator.aname,
+                    'album_cover_url': song_iterator.cover_url,
+
+                    'producer_pid': song_iterator.pid,
+                    'producer_username': song_iterator.username,
+                }
+                for song_iterator in directupload_songview_list
+            ],
+            "collaborate": [
+                {
+                    'sid': song_iterator.sid,
+                    'sname': song_iterator.sname,
+                    'play_back': song_iterator.play_back,
+
+                    'album_aid': song_iterator.aid,
+                    'album_aname': song_iterator.aname,
+                    'album_cover_url': song_iterator.cover_url,
+
+                    'producer_pid': song_iterator.pid,
+                    'producer_username': song_iterator.username,
+                }
+                for song_iterator in collaborate_songview_list
+            ]
+        }
+    ))
 
 
 @csrf_exempt
@@ -633,7 +748,6 @@ def querySongByCondition(request):
 
 @csrf_exempt
 def followProducer(request):
-
     if request.method != 'POST':
         return JsonResponse(Result.failure(
             code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,
@@ -685,7 +799,6 @@ def followProducer(request):
 
 @csrf_exempt
 def cancelFollowProducer(request):
-
     if request.method != 'POST':
         return JsonResponse(Result.failure(
             code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,

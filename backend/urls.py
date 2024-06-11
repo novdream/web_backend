@@ -37,6 +37,9 @@ urlpatterns = [
 
     path('api/checkJwtToken/', views_mp.checkJwtToken),
     path('api/updateJwtToken/', views_mp.updateJwtToken),
+    path('api/recommendAlbum/', views_mp.recommendAlbum),
+    path('api/recommendSong/', views_mp.recommendSong),
+    path('api/recommendProducer/', views_mp.recommendProducer),
 
     # display 信息展示
     path('api/queryProducerById/', views_dp.queryProducerById),
@@ -48,7 +51,9 @@ urlpatterns = [
     path('api/querySongList/', views_dp.querySongList),
 
     path('api/addSongToSongList/', views_dp.addSongToSongList),
-    path('api/dropSongFromSongList/', views_dp.dropSongToSongList),
+    path('api/dropSongFromSongList/', views_dp.dropSongFromSongList),
+    path('api/querySongByAlbum/', views_dp.querySongByAlbum),
+    path('api/querySongByProducer/', views_dp.querySongByProducer),
 
     path('api/createSongComment/', views_dp.createSongComment),
     path('api/dropSongComment/', views_dp.dropSongComment),
@@ -109,6 +114,7 @@ urlpatterns = [
 
     path('api/postBlog/', views_cc.postBlog),
     path('api/postBlogComment/', views_cc.postBlogComment),
+    path('api/likeBlog/', views_cc.likeBlog),
     path('api/getUserAllBriefBlog/', views_cc.getUserAllBriefBlog),
     path('api/getUserAllBlog/', views_cc.getUserAllBlog),
 

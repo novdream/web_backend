@@ -360,7 +360,7 @@ def uploadSongLyrics(request):
 
     # 获取歌词文件
 
-    lyrics_file = request.POST.get('lyrics_file')
+    lyrics_file = request.FILES.get('lyrics_file')
 
     if lyrics_file is None:
         return JsonResponse(Result.failure(
@@ -396,7 +396,7 @@ def uploadSongLyrics(request):
             message='upload file failed',
         ))
 
-    song_to_modify.lyrics_utl = upload_lyrics_url
+    song_to_modify.lyrics_url = upload_lyrics_url
     song_to_modify.save()
 
     return JsonResponse(Result.success())

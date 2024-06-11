@@ -459,6 +459,53 @@ def postBlog(request):
     return JsonResponse(Result.success())
 
 
+@csrf_exempt
+def likeBlog(request):
+    if request.method != 'POST':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,
+            message='Method {} not allowed, POST only'.format(request.method)
+        ))
+
+    encode_jwt = request.POST.get('encode_jwt')
+    blog_bid = request.POST.get('blog_bid')
+
+    # 没有 jwt 令牌字段
+    if encode_jwt is None or encode_jwt == '':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_UNAUTHORIZED,
+            message='no jwt token',
+        ))
+
+    ordinary_user = decodeJwtToken(encode_jwt)
+
+    # jwt 令牌解析失败
+    if ordinary_user is None:
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_NOT_ACCEPTABLE,
+            message='invalid jwt token',
+        ))
+
+    dst_blog = models.Blog.objects.filter(bid=blog_bid).first()
+
+    if dst_blog is None:
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_NOT_ACCEPTABLE,
+            message='no such blog'
+        ))
+
+    dst_blog.likes += 1
+    dst_blog.save()
+
+    models.Message.objects.create(
+        sender=ordinary_user,
+        receiver=dst_blog.ordinaryUser,
+        message='{} liked your blog'.format(ordinary_user.username)
+    )
+
+    return JsonResponse(Result.success())
+
+
 def queryBlogOfCommunity(request):
     if request.method != 'GET':
         return JsonResponse(Result.failure(

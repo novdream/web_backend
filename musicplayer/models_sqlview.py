@@ -25,7 +25,7 @@ class SongView(models.Model):
 
     sid = models.UUIDField(primary_key=True)
     sname = models.CharField(max_length=45)
-    play_count = models.IntegerField()
+    play_back = models.IntegerField()
 
     aid = models.UUIDField()
     aname = models.CharField(max_length=45)

@@ -1,3 +1,5 @@
+import random
+
 from django.core.mail import EmailMessage
 
 from django.core.mail import send_mail
@@ -11,8 +13,7 @@ from utils.result import Result
 import utils.utils as utils
 import utils.modelCheck as modelCheck
 import utils.modelOperation as modelOperation
-from musicplayer import models
-
+from musicplayer import models, models_sqlview
 
 # Create your views here.
 
@@ -322,3 +323,80 @@ def updateJwtToken(request):
     new_jwt_token = modelOperation.generateJwtToken(ordinary_user, 2)
 
     return JsonResponse(Result.success(new_jwt_token))
+
+
+def recommendAlbum(request):
+    if request.method != 'GET':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,
+            message='Method {} not allowed, GET only'.format(request.method)
+        ))
+
+    limit_num = min(models.Album.objects.count(), 10)
+
+    album_list = models.Album.objects.order_by('-release_date').all()[:limit_num]
+
+    return JsonResponse(Result.success(
+        [
+            {
+                'aid': album_iterator.aid,
+                'aname': album_iterator.aname,
+                'release_date': album_iterator.release_date,
+                'cover_url': album_iterator.cover_url,
+            }
+            for album_iterator in album_list
+        ]
+    ))
+
+
+def recommendSong(request):
+    if request.method != 'GET':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,
+            message='Method {} not allowed, GET only'.format(request.method)
+        ))
+
+    limit_num = min(models.Song.objects.count(), 16)
+
+    song_list = models.Song.objects.order_by('-update_time').all()[:limit_num]
+
+    return JsonResponse(Result.success(
+        [
+            {
+                'sid': song_iterator.sid,
+                'sname': song_iterator.sname,
+                'play_back': song_iterator.play_back,
+                'cover_url': song_iterator.album.cover_url,
+                'audio_url': song_iterator.audio_url,
+            }
+            for song_iterator in song_list
+        ]
+    ))
+
+
+def recommendProducer(request):
+    if request.method != 'GET':
+        return JsonResponse(Result.failure(
+            code=Result.HTTP_STATUS_METHOD_NOT_ALLOWED,
+            message='Method {} not allowed, GET only'.format(request.method)
+        ))
+
+    limit_num = 10
+
+    producerview_list = list(models_sqlview.ProducerView.objects.values_list(
+        'pid',
+        'username',
+        'profile_picture_url'
+    ))
+    random_producerview_list = random.sample(producerview_list, limit_num)
+
+    return JsonResponse(Result.success(
+        [
+            {
+                'pid': producerview_iter[0],
+                'username': producerview_iter[1],
+                'profile_picture_url': producerview_iter[2],
+            }
+            for producerview_iter in random_producerview_list
+        ]
+    ))
