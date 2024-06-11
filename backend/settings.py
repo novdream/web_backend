@@ -49,6 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'musicplayer.middleware.ExceptionHandlerMiddleware',
 
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -105,8 +106,8 @@ DATABASES = {
         'NAME': 'musicplayer',
         'USER': 'root',
         'PASSWORD': 'root1234',
-        'HOST': '172.17.0.3',
-        'PORT': 3306,
+        'HOST': 'localhost',
+        'PORT': 3307,
         'OPTIONS': {
             'charset': 'utf8mb4',
             'use_unicode': True,
@@ -132,6 +133,44 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+my_logging_format = 'levelname: {levelname} asctime: {asctime} module: {module}\n' + \
+    'process:{process:d} thread:{thread:d}\n' + \
+    'view: {view_name} message: {message}\n' + \
+    'user_agent: {user_agent} client_ip: {client_ip}\n' + \
+    '{traceback}\n\n'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': my_logging_format,
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'error.log',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django.request': {  # Django 会自动使用这个 logger 记录请求相关的错误
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        'musicplayer': {  # 你可以为特定的应用或模块创建一个 logger
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+    # 在这里添加额外的配置，比如为其他模块或应用设置 logger
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
@@ -162,3 +201,4 @@ EMAIL_PORT = 465
 EMAIL_USE_TLS = False  # 如果使用TLS则设置为True
 EMAIL_USE_SSL = True  # 使用SSL
 EMAIL_HOST_USER = 'yulo25541733@163.com'
+

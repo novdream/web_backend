@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from musicplayer import views_musicplayer as views_mp
+from musicplayer import views_musicplayer as views_mp, views
 from musicplayer import views_producer_center as views_pc
 from musicplayer import views_user_center as views_uc
 from musicplayer import views_display as views_dp
@@ -25,7 +25,7 @@ from musicplayer import views_community as views_cc
 from musicplayer import views_message as views_ms
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('email/', views_mp.testEmail),
+    path('api/test/', views.test),
 
     # musicplayer 主要对应网站首页部分
     path('api/existEmail/', views_mp.existEmail),
